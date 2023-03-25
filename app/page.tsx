@@ -1,9 +1,11 @@
 "use client";
 import { useState } from "react";
 import ChatGPTResponse from "./components/ChatGPTReponse";
+import Loader from "./components/Loader";
 
 export default function Home() {
 	const [openAiResponse, setopenAiResponse] = useState<null | string>(null);
+	const [isLoading, setIsLoading] = useState<boolean>(false);
 
 	const handleFormSubmit = async (e: any) => {
 		e.preventDefault();
@@ -15,6 +17,7 @@ export default function Home() {
 		const prompt = formData.get("prompt");
 
 		if (prompt) {
+			setIsLoading(true);
 			const fetchResponse = await fetch("/api/chatgpt", {
 				method: "POST",
 				headers: {
@@ -29,6 +32,7 @@ export default function Home() {
 			if (response.status === 200) {
 				setopenAiResponse(response.message);
 				btnSubmit.disabled = false;
+				setIsLoading(false);
 			}
 		}
 	};
@@ -63,7 +67,13 @@ export default function Home() {
 								</button>
 							</div>
 							<div className="p-2 w-full">
-								<ChatGPTResponse response={openAiResponse} />
+								{isLoading ? (
+									<div className="flex justify-center">
+										<Loader isVisible={isLoading} />
+									</div>
+								) : (
+									<ChatGPTResponse response={openAiResponse} />
+								)}
 							</div>
 						</div>
 					</form>

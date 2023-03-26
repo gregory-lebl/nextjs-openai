@@ -1,91 +1,84 @@
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
-import styles from './page.module.css'
-
-const inter = Inter({ subsets: ['latin'] })
+"use client";
+import { useState } from "react";
+import ChatGPTResponse from "./components/ChatGPTReponse";
+import Loader from "./components/Loader";
 
 export default function Home() {
-  return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+	const [openAiResponse, setopenAiResponse] = useState<null | string>(null);
+	const [isLoading, setIsLoading] = useState<boolean>(false);
 
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-        <div className={styles.thirteen}>
-          <Image src="/thirteen.svg" alt="13" width={40} height={31} priority />
-        </div>
-      </div>
+	const handleFormSubmit = async (e: any) => {
+		e.preventDefault();
 
-      <div className={styles.grid}>
-        <a
-          href="https://beta.nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+		const btnSubmit = e.target.querySelector("button");
+		btnSubmit.disabled = true;
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>Explore the Next.js 13 playground.</p>
-        </a>
+		const formData = new FormData(e.target);
+		const prompt = formData.get("prompt");
 
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  )
+		if (prompt) {
+			setIsLoading(true);
+			const fetchResponse = await fetch("/api/chatgpt", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Accept: "application/json",
+				},
+				body: JSON.stringify({ prompt: prompt }),
+			});
+
+			const response = await fetchResponse.json();
+
+			if (response.status === 200) {
+				setopenAiResponse(response.message);
+				btnSubmit.disabled = false;
+				setIsLoading(false);
+			}
+		}
+	};
+
+	return (
+		<main className="text-gray-600 body-font relative">
+			<div className="container px-5 py-24 mx-auto">
+				<div className="lg:w-1/2 md:w-2/3 mx-auto">
+					<form onSubmit={handleFormSubmit}>
+						<div className="flex flex-wrap -m-2">
+							<div className="p-2 w-1/2"></div>
+							<div className="p-2 w-1/2"></div>
+							<div className="p-2 w-full">
+								<div className="relative">
+									<label className="leading-7 text-sm text-gray-600">
+										Prompt for chatGPT
+									</label>
+									<input
+										id="message"
+										type="text"
+										name="prompt"
+										className="w-full bg-gray-100 bg-opacity-50 rounded border border-gray-300 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-200 text-base outline-none text-gray-700 py-1 px-3 resize-none leading-6 transition-colors duration-200 ease-in-out"
+									></input>
+								</div>
+							</div>
+							<div className="p-2 w-full">
+								<button
+									type="submit"
+									className="flex mx-auto text-white bg-indigo-500 border-0 py-2 px-8 focus:outline-none hover:bg-indigo-600 rounded"
+								>
+									Generate
+								</button>
+							</div>
+							<div className="p-2 w-full">
+								{isLoading ? (
+									<div className="flex justify-center">
+										<Loader isVisible={isLoading} />
+									</div>
+								) : (
+									<ChatGPTResponse response={openAiResponse} />
+								)}
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</main>
+	);
 }
